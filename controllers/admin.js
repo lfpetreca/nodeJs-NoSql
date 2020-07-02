@@ -13,7 +13,9 @@ exports.postAddProduct = (req, res, next) => {
         req.body.title,
         req.body.price,
         req.body.imageUrl,
-        req.body.description
+        req.body.description,
+        null,
+        req.user._id
     )
     product.save()
         .then(() => res.redirect('/admin/products'))
@@ -24,9 +26,8 @@ exports.getEditProduct = (req, res, next) => {
     if (!req.query.edit) {
         return res.redirect('/')
     }
-    req.user.getProducts({ where: { id: req.params.productId } })
-        .then(products => {
-            const product = products[0]
+    Product.findById(req.params.productId)
+        .then(product => {
             if (!product) {
                 return res.redirect('/')
             }
@@ -41,21 +42,20 @@ exports.getEditProduct = (req, res, next) => {
 }
 
 exports.postEditProduct = (req, res, next) => {
-    Product.findByPk(req.body.productId)
-        .then(product => {
-            product.title = req.body.title
-            product.price = req.body.price
-            product.imageUrl = req.body.imageUrl
-            product.description = req.body.description
-
-            return product.save()
-        })
+    const product = new Product(
+        req.body.title,
+        req.body.price,
+        req.body.imageUrl,
+        req.body.description,
+        req.body.productId
+    )
+    product.save()
         .then(() => res.redirect('/admin/products'))
         .catch(err => console.error(err))
 }
 
 exports.getProducts = (req, res, next) => {
-    req.user.getProducts()
+    Product.fetchAll()
         .then(product => {
             res.render('admin/products', {
                 prods: product,
@@ -67,10 +67,7 @@ exports.getProducts = (req, res, next) => {
 }
 
 exports.postDeleteProduct = (req, res, next) => {
-    Product.findByPk(req.body.productId)
-        .then(product => {
-            return product.destroy()
-        })
+    Product.deleteById(req.body.productId)
         .then(() => res.redirect('/admin/products'))
         .catch(err => console.error(err))
 }

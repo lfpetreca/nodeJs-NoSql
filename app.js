@@ -7,6 +7,7 @@ const adminRoutes = require('./routes/admin')
 const shopRoutes = require('./routes/shop')
 
 const mongoConnect = require('./utils/database').mongoConnect
+const User = require('./models/user')
 
 const app = express()
 
@@ -18,13 +19,12 @@ app.use(express.static(path.join(__dirname, 'public')))
 
 //Middleware to find the user - for now a dummy one
 app.use((req, res, next) => {
-    /* User.findByPk(1)
+    User.findById('5efe107eaaa7885bdb90b876')
         .then(user => {
             req.user = user
             next()
         })
-        .catch(err => console.err(err)) */
-    next()
+        .catch(err => console.err(err))
 })
 
 app.use('/admin', adminRoutes)
