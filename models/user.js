@@ -1,12 +1,14 @@
 const mongodb = require('mongodb')
-const db = require('../utils/database').getDb
+const getDb = require('../utils/database').getDb
 
 const ObjectId = mongodb.ObjectId
 
 class User {
-    constructor(username, email) {
+    constructor(username, email, cart, id) {
         this.name = username
         this.email = email
+        this.cart = cart
+        this._id = id
     }
 
     save() {
@@ -14,10 +16,63 @@ class User {
         return db.collection('users').insertOne(this)
     }
 
+    addToCart(product) {
+        const db = getDb()
+        const updatedCartItems = [...this.cart.items]
+        let newQuantity = 1
+
+        const cartProductIndex = this.cart.items.findIndex(cp => {
+            return cp.productId.toString() === product._id.toString()
+        })
+
+        if (cartProductIndex >= 0) {
+            newQuantity = this.cart.items[cartProductIndex].quantity + 1
+            updatedCartItems[cartProductIndex].quantity = newQuantity
+        } else {
+            updatedCartItems.push(
+                {
+                    productId: new ObjectId(product._id),
+                    quantity: newQuantity
+                }
+            )
+        }
+
+        const updatedCart = { items: updatedCartItems }
+
+        return db.collection('users').updateOne(
+            { _id: new ObjectId(this._id) },
+            { $set: { cart: updatedCart } }
+        )
+    }
+
+    getCart() {
+        const db = getDb()
+        const productIds = this.cart.items.map(i => i.productId)
+
+        return db.collection('products')
+            .find({ _id: { $in: [productIds] } })
+            .toArray()
+            .then(products => {
+                return products.map(p => {
+                    return {
+                        ...p,
+                        quantity: this.cart.items.find(i => {
+                            return i.productId.toString() === p._id.toString()
+                        }).quantity
+                    }
+                })
+            })
+            .catch(err => console.error(err))
+    }
+
     static findById(userId) {
         const db = getDb()
         return db.collection('users')
             .findOne({ _id: new ObjectId(userId) })
+            .then(user => {
+                return user
+            })
+            .catch(err => console.error(err))
     }
 
 }
