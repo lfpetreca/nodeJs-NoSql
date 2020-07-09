@@ -38,16 +38,13 @@ exports.getProduct = (req, res, next) => {
 
 exports.getCart = (req, res, next) => {
     req.user.getCart()
-        .then(cart => {
-            return cart.getProducts()
-                .then(products => {
-                    res.render('shop/cart', {
-                        pageTitle: 'Your Cart',
-                        path: '/cart',
-                        products: products
-                    })
-                })
-                .catch(err => console.error(err))
+        .then(products => {
+            console.log(products)
+            res.render('shop/cart', {
+                pageTitle: 'Your Cart',
+                path: '/cart',
+                products: products
+            })
         })
         .catch(err => console.error(err))
 }
@@ -57,22 +54,14 @@ exports.postCart = (req, res, next) => {
         .then(product => {
             return req.user.addToCart(product)
         })
-        .then(result => {
-            console.log(result)
-            //res.redirect('/cart')
+        .then(() => {
+            res.redirect('/cart')
         })
         .catch(err => console.error(err))
 }
 
 exports.postCartDeleteProduct = (req, res, next) => {
-    req.user.getCart()
-        .then(cart => {
-            return cart.getProducts({ where: { id: req.body.productId } })
-        })
-        .then(products => {
-            const product = products[0]
-            return product.CartItem.destroy()
-        })
+    req.user.deleteItemFromCart(req.body.productId)
         .then(() => {
             res.redirect('/cart')
         })
