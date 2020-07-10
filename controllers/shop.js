@@ -39,7 +39,6 @@ exports.getProduct = (req, res, next) => {
 exports.getCart = (req, res, next) => {
     req.user.getCart()
         .then(products => {
-            console.log(products)
             res.render('shop/cart', {
                 pageTitle: 'Your Cart',
                 path: '/cart',
@@ -69,28 +68,7 @@ exports.postCartDeleteProduct = (req, res, next) => {
 }
 
 exports.postOrder = (req, res, next) => {
-    let fetchedCart
-
-    req.user.getCart()
-        .then(cart => {
-            fetchedCart = cart
-            return cart.getProducts()
-        })
-        .then(products => {
-            return req.user.createOrder()
-                .then(order => {
-                    order.addProduct(products.map(
-                        product => {
-                            product.OrderItem = { quantity: product.CartItem.quantity }
-                            return product
-                        })
-                    )
-                })
-                .catch(err => console.error(err))
-        })
-        .then(() => {
-            return fetchedCart.setProducts(null)
-        })
+    req.user.addOrder()
         .then(() => {
             res.redirect('/orders')
         })
