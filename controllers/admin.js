@@ -9,14 +9,12 @@ exports.getAddProduct = (req, res, next) => {
 }
 
 exports.postAddProduct = (req, res, next) => {
-    const product = new Product(
-        req.body.title,
-        req.body.price,
-        req.body.imageUrl,
-        req.body.description,
-        null,
-        req.user._id
-    )
+    const product = new Product({
+        title: req.body.title,
+        price: req.body.price,
+        imageUrl: req.body.imageUrl,
+        description: req.body.description
+    })
     product.save()
         .then(() => res.redirect('/admin/products'))
         .catch(err => console.error(err))
