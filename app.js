@@ -7,7 +7,7 @@ const errorController = require('./controllers/error')
 const adminRoutes = require('./routes/admin')
 const shopRoutes = require('./routes/shop')
 
-/* const User = require('./models/user') */
+const User = require('./models/user')
 
 const app = express()
 
@@ -18,14 +18,14 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(express.static(path.join(__dirname, 'public')))
 
 //Middleware to find the user - for now a dummy one
-/* app.use((req, res, next) => {
-    User.findById('5efe107eaaa7885bdb90b876')
+app.use((req, res, next) => {
+    User.findById('5fbe6627e9135d3a485fed47')
         .then(user => {
-            req.user = new User(user.name, user.email, user.cart, user._id)
+            req.user = user
             next()
         })
         .catch(err => console.err(err))
-}) */
+})
 
 app.use('/admin', adminRoutes)
 app.use(shopRoutes)
@@ -35,6 +35,16 @@ app.use(errorController.get404)
 mongoose
     .connect('mongodb+srv://nodeJsUser:mmfgLXb3VpM90JxU@mongodbtonodejs.ierrz.gcp.mongodb.net/shop?retryWrites=true&w=majority')
     .then(result => {
+        User.findOne().then(user => {
+            if (!user) {
+                const user = new User({
+                    name: 'Luis',
+                    email: 'email@email.com',
+                    itemns: []
+                });
+                user.save();
+            }
+        })
         app.listen(3000)
     })
     .catch(err => console.log(err))

@@ -1,4 +1,5 @@
 const Product = require('../models/product')
+const Order = require('../models/order')
 
 exports.getIndex = (req, res, next) => {
     Product.find()
@@ -37,8 +38,11 @@ exports.getProduct = (req, res, next) => {
 }
 
 exports.getCart = (req, res, next) => {
-    req.user.getCart()
-        .then(products => {
+    req.user
+        .populate('cart.items.productId')
+        .execPopulate()
+        .then(user => {
+            const products = user.cart.items
             res.render('shop/cart', {
                 pageTitle: 'Your Cart',
                 path: '/cart',
@@ -47,7 +51,7 @@ exports.getCart = (req, res, next) => {
         })
         .catch(err => console.error(err))
 }
- 
+
 exports.postCart = (req, res, next) => {
     Product.findById(req.body.productId)
         .then(product => {
@@ -60,7 +64,7 @@ exports.postCart = (req, res, next) => {
 }
 
 exports.postCartDeleteProduct = (req, res, next) => {
-    req.user.deleteItemFromCart(req.body.productId)
+    req.user.removeFromCart(req.body.productId)
         .then(() => {
             res.redirect('/cart')
         })
@@ -68,16 +72,27 @@ exports.postCartDeleteProduct = (req, res, next) => {
 }
 
 exports.postOrder = (req, res, next) => {
-    req.user.addOrder()
-        .then(() => {
-            res.redirect('/orders')
+    req.user
+        .populate('cart.items.productId')
+        .execPopulate()
+        .then(user => {
+            const products = user.cart.items
+                .map(i => {
+                    return { quantity: i.quantity, product: { ...i.productId._doc } }
+                })
+            const order = new Order({
+                user: { userId: req.user, name: req.user.name },
+                products: products
+            })
+            return order.save()
         })
+        .then(() => req.user.clearCart())
+        .then(() => res.redirect('/orders'))
         .catch(err => console.error(err))
 }
 
 exports.getOrders = (req, res, next) => {
-    req.user
-        .getOrders()
+    Order.find({ "user.userId": req.user._id })
         .then(orders => {
             res.render('shop/orders', {
                 pageTitle: 'Your orders',
