@@ -11,6 +11,18 @@ exports.getLogin = (req, res, next) => {
 }
 
 exports.postLogin = (req, res, next) => {
-    req.setHeader('Set-Cookie', 'loggedIn=true')
-    res.redirect('/')
+    User.findById('5fbe6627e9135d3a485fed47')
+        .then(user => {
+            req.session.isLoggedIn = true
+            req.session.user = user
+            req.session.save(() => {
+                res.redirect('/')
+            })
+        }).catch(err => console.log(err))
+}
+
+exports.postLogout = (req, res, next) => {
+    req.session.destroy(() => {
+        res.redirect('/')
+    })
 }

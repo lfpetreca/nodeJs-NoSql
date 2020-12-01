@@ -2,25 +2,32 @@ const express = require('express')
 const path = require('path')
 const bodyParser = require('body-parser')
 const mongoose = require('mongoose')
+const session = require('express-session')
+const MongoDbStore = require('connect-mongodb-session')(session)
 
 const errorController = require('./controllers/error')
 const adminRoutes = require('./routes/admin')
 const shopRoutes = require('./routes/shop')
 const authRoutes = require('./routes/auth')
-
 const User = require('./models/user')
 
+const MONGO_URI = 'mongodb+srv://nodeJsUser:mmfgLXb3VpM90JxU@mongodbtonodejs.ierrz.gcp.mongodb.net/shop'
+
 const app = express()
+const store = new MongoDbStore({ uri: MONGO_URI, collection: 'sessions' })
 
 app.set('view engine', 'ejs')
 app.set('views', 'views')
 
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(express.static(path.join(__dirname, 'public')))
+app.use(session({ secret: '$4LTk&Y', resave: false, saveUninitialized: false, store: store }))
 
-//Middleware to find the user - for now a dummy one
 app.use((req, res, next) => {
-    User.findById('5fbe6627e9135d3a485fed47')
+    if (!req.session.user) {
+        return next()
+    }
+    User.findById(req.session.user._id)
         .then(user => {
             req.user = user
             next()
@@ -34,16 +41,11 @@ app.use(authRoutes)
 
 app.use(errorController.get404)
 
-mongoose
-    .connect('mongodb+srv://nodeJsUser:mmfgLXb3VpM90JxU@mongodbtonodejs.ierrz.gcp.mongodb.net/shop?retryWrites=true&w=majority')
-    .then(result => {
+mongoose.connect(MONGO_URI)
+    .then(() => {
         User.findOne().then(user => {
             if (!user) {
-                const user = new User({
-                    name: 'Luis',
-                    email: 'email@email.com',
-                    itemns: []
-                });
+                const user = new User({ name: 'Luis', email: 'email@email.com', itemns: [] });
                 user.save();
             }
         })
