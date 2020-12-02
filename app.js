@@ -42,13 +42,5 @@ app.use(authRoutes)
 app.use(errorController.get404)
 
 mongoose.connect(MONGO_URI)
-    .then(() => {
-        User.findOne().then(user => {
-            if (!user) {
-                const user = new User({ name: 'Luis', email: 'email@email.com', itemns: [] });
-                user.save();
-            }
-        })
-        app.listen(3000)
-    })
+    .then(() => app.listen(3000))
     .catch(err => console.log(err))
